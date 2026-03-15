@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+// Quick artisan stub - full Laravel will be installed via composer
+// For now, this scaffolds the app structure
+
+define('LARAVEL_START', microtime(true));
+
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require __DIR__ . '/vendor/autoload.php';
+} else {
+    // Minimal bootstrap for setup
+    echo "Waiting for composer install to complete...\n";
+    echo "Run: composer install --ignore-platform-req=ext-intl\n";
+    exit(1);
+}
+
+// Laravel Artisan kernel bootstrap
+$app = require_once __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$status = $kernel->handle(
+    $input = new Symfony\Component\Console\Input\ArgvInput,
+    new Symfony\Component\Console\Output\ConsoleOutput
+);
+$kernel->terminate($input, $status);
+exit($status);
