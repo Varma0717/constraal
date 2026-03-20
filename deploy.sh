@@ -9,6 +9,13 @@ cd /home/site/wwwroot
 echo "Installing Composer dependencies..."
 composer install --no-dev --optimize-autoloader --no-interaction
 
+# Clear stale caches before re-caching
+echo "Clearing old caches..."
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear 2>/dev/null || true
+
 # Laravel optimizations
 echo "Running Laravel optimizations..."
 php artisan config:cache

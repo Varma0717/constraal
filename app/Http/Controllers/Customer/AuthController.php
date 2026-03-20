@@ -219,28 +219,47 @@ class AuthController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        try {
+            if ($validator->fails()) {
+                return back()->withErrors($validator)->withInput();
+            }
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'is_active' => true,
+            ]);
+
+            Auth::login($user);
+
+            // Log activity
+            try {
+                $user->activities()->create([
+                    'action' => 'account_created',
+                    'description' => 'Account created',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            } catch (Throwable $e) {
+                Log::warning('Failed to store signup activity.', [
+                    'message' => $e->getMessage(),
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            return redirect()->route('account.customer.dashboard')->with('success', 'Welcome to Constraal!');
+        } catch (Throwable $exception) {
+            Log::error('Customer signup failed due to database issue.', [
+                'message' => $exception->getMessage(),
+                'ip_address' => $request->ip(),
+                'email' => $request->email,
+            ]);
+
+            return back()->withErrors([
+                'email' => 'Registration is temporarily unavailable. Please try again shortly.',
+            ])->withInput();
         }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_active' => true,
-        ]);
-
-        Auth::login($user);
-
-        // Log activity
-        $user->activities()->create([
-            'action' => 'account_created',
-            'description' => 'Account created',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        return redirect()->route('account.customer.dashboard')->with('success', 'Welcome to Constraal!');
     }
 
     /**
